@@ -112,3 +112,147 @@ function prepareSlideShow() {
 	}
 }
 addLoadEvent(prepareSlideShow);
+
+function showSection(id){
+	var sections = document.getElementsByTagName("section");
+	for(var i=0; i<sections.length; i++){
+		if(sections[i].getAttribute("id") === id){
+			sections[i].style.display = "block";
+		} else{
+			sections[i].style.display = "none";
+		}
+	}
+}
+
+function prepareInternalnav(){
+	if(!document.getElementById) return false;
+	if(!document.getElementsByTagName) return false;
+	var articles = document.getElementsByTagName("article");
+	if(articles.length === 0) return false;
+	var navs = articles[0].getElementsByTagName("nav");
+	if(navs.length === 0) return false;
+	var links = navs[0].getElementsByTagName("a");
+	for(var i=0; i<links.length; i++){
+		var sectionId = links[i].getAttribute("href").split("#")[1];
+		if(document.getElementById(sectionId)){
+			document.getElementById(sectionId).style.display = "none";
+			links[i].destination = sectionId;
+			links[i].onclick = function(){
+				showSection(this.destination);
+				return false;
+			};
+		} 
+	} 
+}
+addLoadEvent(prepareInternalnav);
+
+function preparePlaceholder(){
+	if(!document.getElementById) return false;
+	if(!document.createElement) return false;
+	if(!document.createTextNode) return false;
+	if(!document.getElementById("imagegallery")) return false;
+	var placeholder = document.createElement("img");
+	placeholder.setAttribute("id","placeholder");
+	placeholder.setAttribute("src","imgs/placeholder.gif");
+	placeholder.setAttribute("alt","my image gallery");
+	var description = document.createElement("p");
+	description.setAttribute("id","description");
+	var desctext = document.createTextNode("choose an image.");
+	description.appendChild(desctext);
+	var imagegallery = document.getElementById("imagegallery");
+	insertAfter(description,imagegallery);
+	insertAfter(placeholder,description);
+}
+addLoadEvent(preparePlaceholder);
+
+function showPic(whichpic){
+	if(!document.getElementById) return false;
+	if(!document.getElementById("placeholder")) return false;
+	var placeholder = document.getElementById("placeholder");
+	var source = whichpic.getAttribute("href");
+	placeholder.setAttribute("src",source);
+	if(!document.getElementById("description")) return false;
+	var text;
+	if(whichpic.getAttribute("title")){
+		text = whichpic.getAttribute("title");
+	} else{
+		text = "";
+	}
+	var description = document.getElementById("description");
+	if(description.firstChild.nodeType === 3){
+		description.firstChild.nodeValue = text;
+	}
+	return false;
+}
+
+function prepareGallery(){
+	if(!document.getElementById) return false;
+	if(!document.getElementsByTagName) return false;
+	if(!document.getElementById("imagegallery")) return false;
+	var gallery = document.getElementById("imagegallery");
+	var links = gallery.getElementsByTagName("a");
+	for(var i=0; i<links.length; i++){
+		links[i].onclick = function(){
+			return showPic(this);
+		}
+	}
+}
+addLoadEvent(prepareGallery);
+
+function stripleTables(){
+	if(!document.getElementsByTagName) return false;
+	var tables = document.getElementsByTagName("table");
+	var rows = tables[0].getElementsByTagName("tr");
+	var odd = false;
+	for(var i=0; i<rows.length; i++){
+		if(odd === true){
+			addClass(rows[i], "odd");
+			odd = false;
+		} else{
+			odd = true;
+		}
+	}
+}
+addLoadEvent(stripleTables);
+
+function highlightRows(){
+	if(!document.getElementsByTagName) return false;
+	var tables = document.getElementsByTagName("table");
+	var rows = tables[0].getElementsByTagName("tr");
+	for(var i=0; i<rows.length; i++){
+		rows[i].oldClassName = rows[i].className;
+		rows[i].onmouseover = function(){
+			addClass(this, "highlight");
+		};
+		rows[i].onmouseout = function(){
+			this.className = this.oldClassName;
+		}
+	}
+}
+addLoadEvent(highlightRows);
+
+function displayAbbreviations(){
+	if(!document.getElementsByTagName) return false;
+	if(!document.createTextNode) return false;
+	if(!document.createElement) return false;
+	var abbrs = document.getElementsByTagName("abbr");
+	if(abbrs.length === 0) return false;
+	var dlist = document.createElement("dl");
+	for(var i=0; i<abbrs.length; i++){
+		var dtitle = document.createElement("dt");
+		var dtitle_text = document.createTextNode(abbrs[i].lastChild.nodeValue);
+		dtitle.appendChild(dtitle_text);
+		var ddesc = document.createElement("dd");
+		var ddesc_text = document.createTextNode(abbrs[i].getAttribute("title"));
+		ddesc.appendChild(ddesc_text);
+		dlist.appendChild(dtitle);
+		dlist.appendChild(ddesc);
+	}
+	var header = document.createElement("h3");
+	var header_text = document.createTextNode("Abbreviations");
+	header.appendChild(header_text);
+	var articles = document.getElementsByTagName("article");
+	articles[0].appendChild(header);
+	articles[0].appendChild(dlist);
+}
+addLoadEvent(displayAbbreviations);
