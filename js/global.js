@@ -1,6 +1,6 @@
 function addLoadEvent(func) {
 	var oldonload = window.onload;
-	if(typeof window.onload != "function"){
+	if(typeof window.onload !== "function"){
 		window.onload = func;
 	} else {
 		window.onload = function(){
@@ -35,9 +35,9 @@ function highlightPage() {
 	var navs = headers[0].getElementsByTagName("nav");
 	if(navs.length === 0) return false;
 	var links = navs[0].getElementsByTagName("a");
+	if(links.length === 0) return false;
 	for(var i=0; i<links.length; i++){
-		if(window.location.href.indexOf(links[i].getAttribute("href")) != -1){
-			// indexOf() 方法可返回某个指定的字符串值在字符串中首次出现的位置。
+		if(window.location.href.indexOf(links[i].getAttribute("href")) !== -1){
 			addClass(links[i],"here");
 			document.body.setAttribute("id",links[i].lastChild.nodeValue.toLowerCase());
 		}
@@ -53,14 +53,12 @@ function moveElement(elementId,finalX,finalY,interval) {
 	if(!elem.style.left) elem.style.left = "0px";
 	if(!elem.style.top) elem.style.top = "0px";
 	var xpos = parseInt(elem.style.left);
-	// parseInt() 函数可解析一个字符串，并返回一个整数。
 	var ypos = parseInt(elem.style.top);
 	if(xpos === finalX && ypos === finalY){
 		return true;
 	}
 	if(xpos < finalX){
 		xpos += Math.ceil((finalX - xpos)/10); 
-		// ceil() 方法可对一个数进行上舍入。
 	}
 	if(xpos > finalX){
 		xpos -= Math.ceil((xpos - finalX)/10);
@@ -98,11 +96,8 @@ function prepareSlideShow() {
 	var links = document.getElementsByTagName("a");
 	var destination;
 	for(var i=0; i<links.length; i++){
-		// destination = links[i].getAttribute("href");
-		// 上面这条语句会产生闭包，应该改为下面的语句
 		links[i].onmouseover = function () {
 			destination = this.getAttribute("href");
-			// 上面这条语句不会产生闭包
 			if(destination.indexOf("index") != -1) moveElement("preview",0,0,5);
 			if(destination.indexOf("about") != -1) moveElement("preview",-150,0,5);
 			if(destination.indexOf("photos") != -1) moveElement("preview",-300,0,5);	
@@ -202,6 +197,7 @@ addLoadEvent(prepareGallery);
 function stripleTables(){
 	if(!document.getElementsByTagName) return false;
 	var tables = document.getElementsByTagName("table");
+	if(tables.length === 0) return false;
 	var rows = tables[0].getElementsByTagName("tr");
 	var odd = false;
 	for(var i=0; i<rows.length; i++){
@@ -218,6 +214,7 @@ addLoadEvent(stripleTables);
 function highlightRows(){
 	if(!document.getElementsByTagName) return false;
 	var tables = document.getElementsByTagName("table");
+	if(tables.length === 0) return false;
 	var rows = tables[0].getElementsByTagName("tr");
 	for(var i=0; i<rows.length; i++){
 		rows[i].oldClassName = rows[i].className;
@@ -256,3 +253,99 @@ function displayAbbreviations(){
 	articles[0].appendChild(dlist);
 }
 addLoadEvent(displayAbbreviations);
+
+function focusLabels(){
+	if(!document.getElementsByTagName) return false;
+	var labels = document.getElementsByTagName("label");
+	if(labels.length === 0) return false;
+	for(var i=0; i<labels.length; i++){
+		if(!labels[i].getAttribute("for")) continue;
+		labels[i].onclick = function(){
+			var id = this.getAttribute("for");
+			if(!document.getElementById(id)) return false;
+			var element = document.getElementById(id);
+			element.focus();
+		}
+	}
+}
+addLoadEvent(focusLabels);
+
+function resetFields(whichform){
+	var elements = whichform.elements;
+	if(elements.length === 0) return false;
+	for(var i=0; i<elements.length; i++){
+		var element = elements[i];
+		if(element.type === "submit") continue;
+		var check = element.placeholder || element.getAttribute("placeholder");
+		if(!check) continue;
+		element.onfocus = function(){
+			var text = this.placeholder || this.getAttribute("placeholder");
+			if(this.value === text){
+				this.className = "";
+				this.value = "";
+			}
+		};
+		element.onblur = function(){
+			if(this.value === ""){
+				this.className = "placeholder";
+				this.value = this.placeholder || this.getAttribute("placeholder");
+			}
+		};
+		element.onblur();
+	}
+}
+
+function submitFormWithAjax(whichform, element){
+	var requset = new XMLHttpRequest();
+	if(!requset) return false;
+	displayAjaxLoading(element);
+	var dataParts = [];
+	for(var i=0; i<whichform.elements.length; i++){
+		dataParts[i] = whichform.elements[i].name + "=" + encodeURIComponent(whichform.elements[i].value);		
+	}
+	var data = dataParts.join("&");
+	requset.open("post", whichform.getAttribute("action"), true);
+	requset.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	requset.onreadystatechange = function(){
+		if(requset.readyState === 4){
+			if(requset.status === 200 || requset.status === 0){
+				var matches = requset.responseText.match(/<article>([\s\S]+)<\/article>/);
+				if(matches.length>0){
+					element.innerHTML = matches[1];
+				} else{
+					element.innerHTML = "<p>Oops, there was an error. Sorry.";
+				}
+			} else{
+				element.innerHTML = "<p>" + requset.statusText + "</p>";
+			}
+		}
+	};
+	requset.send(data);
+	return true;
+}
+
+function prepareForms(){
+	if(!document.forms) return false;
+	var forms = document.forms;
+	if(forms.length === 0) return false;
+	for(var i=0; i<forms.length; i++){
+		resetFields(forms[i]);
+		forms[i].onsubmit = function(){
+			var article = document.getElementsByTagName("article")[0];
+			if(submitFormWithAjax(this, article)) return false;
+			return true;
+		};
+	}
+
+}
+addLoadEvent(prepareForms);
+
+function displayAjaxLoading(element){
+	while(element.hasChildNodes()){
+		element.removeChild(element.lastChild);
+	}
+	var content = document.createElement("img");
+	content.setAttribute("src","imgs/loading.gif");
+	content.setAttribute("alt","Loading...");
+	element.appendChild(content);
+}
